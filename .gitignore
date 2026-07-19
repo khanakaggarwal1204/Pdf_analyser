@@ -1,0 +1,15 @@
+# Python cache
+_pycache__/
+.pyc
+
+# Virtual environment
+venv/
+
+# ChromaDB
+chroma_db/
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
