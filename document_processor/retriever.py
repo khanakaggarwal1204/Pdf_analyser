@@ -9,8 +9,10 @@ def retrieve_chunks(question, n_results=5):
     print("Collection count:", collection.count())
 
     question_embedding=model.encode(question).tolist()
-    results=collection.query(
-        query_embeddings=[question_embedding],
-        n_results=n_results
+    results = collection.query(
+    query_embeddings=[question_embedding],
+    n_results=n_results,
+    include=["documents", "distances"]
     )
+
     return results
