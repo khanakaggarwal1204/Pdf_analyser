@@ -1,12 +1,18 @@
 # Python cache
-_pycache__/
-.pyc
+__pycache__/
+*.pyc
 
 # Virtual environment
 venv/
 
 # ChromaDB
 chroma_db/
+
+# Uploaded files
+uploads/
+
+# SQLite database
+*.db
 
 # VS Code
 .vscode/
