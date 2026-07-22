@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SmartDoc AI — Retrieval-Augmented Knowledge Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ============ SIGN-IN OVERLAY (optional, mocked) ============ -->
+  <div id="signin-overlay" class="signin-overlay">
+    <div class="signin-card">
+      <div class="signin-mark">§</div>
+      <h1>SmartDoc AI</h1>
+      <p class="signin-sub">Retrieval-Augmented Knowledge Assistant</p>
+      <form id="signin-form">
+        <label>
+          <span>Name</span>
+          <input type="text" id="signin-name" placeholder="Ada Lovelace" required>
+        </label>
+        <button type="submit" class="btn-brass">Enter reading room</button>
+      </form>
+      <button id="guest-btn" class="link-btn">Continue as guest →</button>
+    </div>
+  </div>
+
+  <!-- ============ APP SHELL ============ -->
+  <div class="app" id="app" hidden>
+
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-mark">§</span>
+        <div>
+          <h1>SmartDoc AI</h1>
+          <p>Retrieval-Augmented Knowledge Assistant</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <span id="user-chip" class="user-chip"></span>
+        <button id="signout-btn" class="link-btn small">Sign out</button>
+      </div>
+    </header>
+
+    <div class="workspace">
+
+      <!-- ============ CARD CATALOG (sidebar / uploads) ============ -->
+      <aside class="catalog">
+        <div class="catalog-head">
+          <h2>Card Catalog</h2>
+          <span class="catalog-count" id="doc-count">0 documents</span>
+        </div>
+
+        <label for="file-input" class="dropzone" id="dropzone">
+          <input type="file" id="file-input" accept=".pdf,.docx,.txt" multiple hidden>
+          <span class="dropzone-icon">⇪</span>
+          <span class="dropzone-text">Drop files or click to upload</span>
+          <span class="dropzone-hint">PDF · DOCX · TXT</span>
+        </label>
+
+        <div class="catalog-drawer" id="catalog-drawer">
+          <p class="catalog-empty" id="catalog-empty">No documents indexed yet. Upload one to begin.</p>
+        </div>
+      </aside>
+
+      <!-- ============ CHAT MAIN ============ -->
+      <main class="chat">
+        <div class="chat-thread" id="chat-thread">
+          <div class="thread-intro">
+            <p class="intro-eyebrow">Ask something about your documents</p>
+            <p class="intro-line">Answers are grounded in what you upload — every claim carries a source card you can flip open.</p>
+          </div>
+        </div>
+
+        <form id="chat-form" class="chat-input-bar">
+          <input
+            type="text"
+            id="chat-input"
+            placeholder="Ask a question about your documents…"
+            autocomplete="off"
+          >
+          <button type="submit" id="send-btn" class="btn-brass">Ask →</button>
+        </form>
+      </main>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
