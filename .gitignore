@@ -8,11 +8,8 @@ venv/
 # ChromaDB
 chroma_db/
 
-# Uploaded files
-uploads/
-
-# SQLite database
-*.db
+# Environment variables
+.env
 
 # VS Code
 .vscode/

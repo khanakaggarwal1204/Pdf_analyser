@@ -1,10 +1,10 @@
-from pypdf import PdfReader
+import fitz
 
 def extract_pdf_text(pdf_path):
-    reader=PdfReader(pdf_path)
-    pages=[]
-    for page in reader.pages:
-        page_text=page.extract_text()
-        if page_text:
-            pages.append(page_text)
+    doc = fitz.open(pdf_path)
+    pages = []
+    for page in doc:
+        text = page.get_text()
+        if text.strip():
+            pages.append(text)
     return "\n".join(pages)
