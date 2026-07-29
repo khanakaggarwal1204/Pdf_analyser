@@ -16,3 +16,7 @@ chroma_db/
 
 # OS files
 .DS_Store
+
+#Uploaded documents
+backend/uploads/
+uploads/
