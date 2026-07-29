@@ -1,60 +1,53 @@
-/* =========================================================
-   SmartDoc AI — frontend logic
-   Everything that talks to a backend is isolated in the
-   "API LAYER" section below. Right now it returns mock
-   data with a simulated delay — swap the internals of
-   uploadDocument() and askQuestion() for real fetch() calls
-   to your FastAPI endpoints once they're ready.
-   ========================================================= */
-
-/* ---------------------------------------------------------
-   API LAYER (mocked — replace with real calls later)
-   --------------------------------------------------------- */
+//API Functions
+console.log("NEW APP.JS LOADED")
+window.onerror = function (msg, src, line, col, err) {
+  console.error("GLOBAL ERROR:", msg, "at line", line, err);
+};
+console.log("Page loaded at", new Date().toLocaleTimeString());
 const API = {
-  // TODO: replace with `await fetch('/api/upload', { method: 'POST', body: formData })`
   async uploadDocument(file) {
-    await delay(600 + Math.random() * 500);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("http://127.0.0.1:8000/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error("Upload failed");
+    }
+
+    const data = await response.json();
+
     return {
       id: crypto.randomUUID(),
-      name: file.name,
-      pages: Math.floor(Math.random() * 40) + 3,
+      name: data.filename,
+      pages: "-",
       status: "indexed",
     };
   },
 
-  // TODO: replace with `await fetch('/api/query', { method: 'POST', body: JSON.stringify({ question, doc_ids }) })`
-  async askQuestion(question, docs) {
-    await delay(900 + Math.random() * 700);
+  async askQuestion(question) {
+    const response = await fetch("http://127.0.0.1:8000/ask", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        question: question,
+      }),
+    });
 
-    if (docs.length === 0) {
-      return {
-        answer:
-          "I don't have any documents to search yet. Upload a PDF, DOCX, or TXT file in the Card Catalog on the left, and I'll ground my answers in it.",
-        citations: [],
-      };
+    if (!response.ok) {
+      throw new Error("Failed to get answer");
     }
 
-    // Mocked answer + citations, shaped like what the real RAG
-    // pipeline (LangChain + ChromaDB) will eventually return.
-    const sourceDoc = docs[Math.floor(Math.random() * docs.length)];
+    const data = await response.json();
+
     return {
-      answer: `Based on "${sourceDoc.name}", here's a grounded answer to "${question}" — this is placeholder text standing in for the real retrieval-augmented response your FastAPI backend will generate once it's connected.`,
-      citations: [
-        {
-          doc: sourceDoc.name,
-          page: Math.floor(Math.random() * sourceDoc.pages) + 1,
-          excerpt:
-            "This is a stand-in excerpt showing where a real chunk of retrieved document text will appear once the vector database is wired up.",
-        },
-        docs.length > 1
-          ? {
-              doc: docs[(docs.indexOf(sourceDoc) + 1) % docs.length].name,
-              page: Math.floor(Math.random() * 20) + 1,
-              excerpt:
-                "A second supporting excerpt, demonstrating multi-source citation coverage across your uploaded documents.",
-            }
-          : null,
-      ].filter(Boolean),
+      answer: data.answer,
+      citations: [],
     };
   },
 };
@@ -63,17 +56,11 @@ function delay(ms) {
   return new Promise((res) => setTimeout(res, ms));
 }
 
-/* ---------------------------------------------------------
-   STATE
-   --------------------------------------------------------- */
 const state = {
   user: null,
-  documents: [], // { id, name, pages, status }
+  documents: [],
 };
 
-/* ---------------------------------------------------------
-   SIGN-IN (optional / mocked — no real auth backend)
-   --------------------------------------------------------- */
 const signinOverlay = document.getElementById("signin-overlay");
 const signinForm = document.getElementById("signin-form");
 const signinNameInput = document.getElementById("signin-name");
@@ -81,12 +68,19 @@ const guestBtn = document.getElementById("guest-btn");
 const appEl = document.getElementById("app");
 const userChip = document.getElementById("user-chip");
 const signoutBtn = document.getElementById("signout-btn");
+const savedUser = localStorage.getItem("user");
+if (savedUser) {
+  enterApp(savedUser);
+}
 
 function enterApp(name) {
   state.user = name || "Guest";
+  localStorage.setItem("user", state.user);
+
   userChip.textContent = state.user;
   signinOverlay.hidden = true;
   appEl.hidden = false;
+
   document.getElementById("chat-input").focus();
 }
 
@@ -98,21 +92,34 @@ signinForm.addEventListener("submit", (e) => {
 guestBtn.addEventListener("click", () => enterApp("Guest"));
 
 signoutBtn.addEventListener("click", () => {
+  localStorage.removeItem("user");
   appEl.hidden = true;
   signinOverlay.hidden = false;
   signinNameInput.value = "";
 });
 
-/* ---------------------------------------------------------
-   FILE UPLOAD / CARD CATALOG
-   --------------------------------------------------------- */
 const fileInput = document.getElementById("file-input");
 const dropzone = document.getElementById("dropzone");
 const catalogDrawer = document.getElementById("catalog-drawer");
 const catalogEmpty = document.getElementById("catalog-empty");
 const docCount = document.getElementById("doc-count");
 
-fileInput.addEventListener("change", (e) => handleFiles(e.target.files));
+// fileInput.addEventListener("change", async (e) => {
+//   console.log("CHANGE EVENT");
+//   await handleFiles(e.target.files);
+//   console.log("HANDLEFILES FINISHED");
+// });
+
+fileInput.addEventListener("change", async (e) => {
+  console.log("CHANGE EVENT");
+
+  try {
+    await handleFiles(e.target.files);
+    console.log("HANDLEFILES FINISHED");
+  } catch (err) {
+    console.error("OUTER ERROR:", err);
+  }
+});
 
 ["dragover", "dragenter"].forEach((evt) =>
   dropzone.addEventListener(evt, (e) => {
@@ -126,7 +133,10 @@ fileInput.addEventListener("change", (e) => handleFiles(e.target.files));
     dropzone.classList.remove("dragover");
   })
 );
-dropzone.addEventListener("drop", (e) => handleFiles(e.dataTransfer.files));
+dropzone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  handleFiles(e.dataTransfer.files);
+});
 
 async function handleFiles(fileList) {
   const files = Array.from(fileList || []);
@@ -151,19 +161,51 @@ function renderPendingCard(id, name) {
   card.className = "index-card";
   card.id = id;
   card.innerHTML = `
-    <p class="doc-name">${escapeHtml(name)}</p>
-    <p class="doc-meta"><span>indexing…</span><span>⏳</span></p>
-  `;
+  <p class="doc-name">${escapeHtml(name)}</p>
+  <p class="doc-meta">
+    <span>indexing…</span>
+    <span>⏳</span>
+  </p>
+`;
   catalogDrawer.appendChild(card);
 }
 
 function replacePendingCard(id, doc) {
   const card = document.getElementById(id);
+
   if (!card) return;
+
   card.innerHTML = `
-    <p class="doc-name">${escapeHtml(doc.name)}</p>
-    <p class="doc-meta"><span class="doc-status">indexed · ${doc.pages}p</span><span>✓</span></p>
+    <div class="doc-header">
+      <p class="doc-name">${escapeHtml(doc.name)}</p>
+
+      <button class="delete-btn" data-file="${doc.name}">
+        🗑️
+      </button>
+    </div>
+
+    <p class="doc-meta">
+      <span class="doc-status">
+        indexed · ${doc.pages}p
+      </span>
+
+      <span>✓</span>
+    </p>
   `;
+
+  const deleteBtn = card.querySelector(".delete-btn");
+
+  deleteBtn.addEventListener("click", async () => {
+    await deleteDocument(doc.name);
+
+    card.remove();
+
+    state.documents = state.documents.filter(
+      d => d.name !== doc.name
+    );
+
+    updateDocCount();
+  });
 }
 
 function removeCard(id) {
@@ -176,9 +218,6 @@ function updateDocCount() {
   docCount.textContent = `${n} document${n === 1 ? "" : "s"}`;
 }
 
-/* ---------------------------------------------------------
-   CHAT
-   --------------------------------------------------------- */
 const chatForm = document.getElementById("chat-form");
 const chatInput = document.getElementById("chat-input");
 const chatThread = document.getElementById("chat-thread");
@@ -197,7 +236,7 @@ chatForm.addEventListener("submit", async (e) => {
   const typingEl = addTypingIndicator();
 
   try {
-    const { answer, citations } = await API.askQuestion(question, state.documents);
+    const { answer, citations } = await API.askQuestion(question);
     typingEl.remove();
     addAssistantMessage(answer, citations);
   } catch (err) {
@@ -286,4 +325,27 @@ function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = str;
   return div.innerHTML;
+}
+
+async function deleteDocument(filename) {
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:8000/delete/${encodeURIComponent(filename)}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Delete failed");
+    }
+
+    state.documents = state.documents.filter(doc => doc.name !== filename);
+
+    renderCatalog();
+
+  } catch (err) {
+    console.error(err);
+    alert("Couldn't delete the document.");
+  }
 }

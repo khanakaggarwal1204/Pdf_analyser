@@ -7,12 +7,18 @@ from document_processor.vector_store import store_embeddings
 from document_processor.retriever import retrieve_chunks
 from document_processor.generator import generate_answer
 
+DEBUG = False
 
 def main():
     pdf_path = "data/Sample_data.pdf"
     question = input("Enter your question: ")
     
     text = extract_pdf_text(pdf_path)
+
+    if not text.strip():
+        print("Could not extract text from the PDF.")
+        return
+
     cleaned_text = clean_text(text)
     chunks = chunk_text(cleaned_text)
 
@@ -24,20 +30,21 @@ def main():
 
     results = retrieve_chunks(question)
 
+    if not results["documents"] or not results["documents"][0]:
+        print("No relevant information found.")
+        return
 
-    DEBUG = False
+    retrieved_chunks=results["documents"][0]
+
     if DEBUG:
         print("\n---Retrieved Chunks---\n")
-        for i, doc in enumerate(results["documents"][0], start=1):
+        for i, doc in enumerate(retrieved_chunks, start=1):
             print(f"\nChunk {i}:")
             print(doc)
             print("-" * 60)
 
-
-    retrieved_chunks = results["documents"][0]
     print("\nGenerating answer...\n")
     answer = generate_answer(question, retrieved_chunks)
-
 
     print("\n---Answer---\n")
     print(answer)

@@ -11,12 +11,18 @@ client = genai.Client(
 def generate_answer(question, chunks):
     context = "\n\n".join(chunks)
 
+    print("\n========== CONTEXT SENT TO GEMINI ==========\n")
+    print(context)
+    print("\n============================================\n")
+
     prompt = f"""
-Use only the information provided below to answer the question.
-If the answer is not present in the context, reply:
+You are answering questions ONLY from the provided document.
+
+If the document contains enough information, answer the question.
+If not, reply exactly:
 "The answer is not available in the provided document."
 
-Context:
+Document:
 {context}
 
 Question:
@@ -29,5 +35,9 @@ Answer:
         model="models/gemini-flash-latest",
         contents=prompt
     )
+
+    print("\n========== GEMINI RESPONSE ==========\n")
+    print(response.text)
+    print("\n=====================================\n")
 
     return response.text
