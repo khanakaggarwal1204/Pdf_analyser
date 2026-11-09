@@ -11,4 +11,9 @@ python-docx
 sentence-transformers
 chromadb
 huggingface_hub
-python-dotenv
+pymupdf
+google-genai
+# Optional / future
+# langchain
+# langchain-community
+# openai

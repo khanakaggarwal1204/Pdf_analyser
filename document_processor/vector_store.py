@@ -1,10 +1,10 @@
 from document_processor.database import collection
 
+
 def store_embeddings(embedded_chunks):
-    if collection.count()>0:
-        collection.delete(
-            ids=collection.get()["ids"]
-        )
+    # Preserve previous documents in the persistent collection.
+    # Each chunk has a globally unique ID generated during upload.
+
     for chunk in embedded_chunks:
         collection.add(
             ids=[str(chunk["id"])],
@@ -12,8 +12,10 @@ def store_embeddings(embedded_chunks):
             documents=[chunk["text"]],
             metadatas=[
                 {
-                    "source":chunk["source"]
+                    "source": chunk["source"],
+                    "document_id": chunk.get("document_id", "")
                 }
             ]
         )
+
     return collection
